@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+      <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -124,8 +124,7 @@
                     <div id="res-badge" class="px-5 py-2 rounded-full text-xs font-black uppercase tracking-tighter shadow-sm"></div>
                 </div>
 
-                <div id="res-grid" class="grid grid-cols-2 gap-4 mb-8">
-                    </div>
+                <div id="res-grid" class="grid grid-cols-2 gap-4 mb-8"></div>
 
                 <div class="space-y-6">
                     <div class="bg-white/40 p-5 rounded-3xl border border-white/60">
@@ -159,7 +158,6 @@
     </main>
 
     <script>
-        // AQUÍ HE PUESTO TU CLAVE API
         const apiKey = "AIzaSyDZuCTFKhlSTWKgPiK5w8td2FqfHjrlisM";
         let currentMode = 'botany';
         let base64Image = null;
@@ -174,12 +172,12 @@
             medicinal: { 
                 name: "Plantas Medicinales", color: "#0d9488", icon: "💊", bg: "#f0fdfa", 
                 prompt: "Identifica la planta medicinal y sus propiedades curativas. JSON: nombre, cientifico, propiedadesTerapeuticas, principiosActivos, formaUso, contraindicaciones, descripcion, datoCurioso",
-                safety: "ADVERTENCIA: Esta información es educativa. No sustituye el consejo médico profesional. Las plantas pueden interactuar con medicamentos."
+                safety: "ADVERTENCIA: Esta información es educativa. No sustituye el consejo médico profesional."
             },
             edible: { 
                 name: "Comestibles", color: "#3f6212", icon: "🥗", bg: "#f7fee7", 
-                prompt: "Analiza comestibilidad. JSON: nombre, cientifico, comestibilidad (SÍ/NO), partesComestibles, preparacion, descripcion, advertencia, datoCurioso",
-                safety: "Aviso: Muchas plantas tienen gemelos tóxicos. No consumas nada sin certeza absoluta."
+                prompt: "Analiza comestibilidad. JSON: nombre, cientifico, comestibilidad, partesComestibles, preparacion, descripcion, advertencia, datoCurioso",
+                safety: "Aviso: No consumas nada sin certeza absoluta."
             },
             insect: { 
                 name: "Entomología", color: "#92400e", icon: "🪲", bg: "#fffbeb", 
@@ -189,7 +187,7 @@
             mushroom: { 
                 name: "Micología", color: "#78350f", icon: "🍄", bg: "#fdf8f4", 
                 prompt: "Analiza la seta. JSON: nombre, cientifico, comestibilidad, confusionPeligrosa, temporada, descripcion, advertencia, datoCurioso",
-                safety: "PELIGRO: La identificación de setas por foto es orientativa. Las consecuencias de un error pueden ser mortales."
+                safety: "PELIGRO: La identificación de setas por foto es orientativa."
             },
             fish: { 
                 name: "Ictiología", color: "#075985", icon: "🐟", bg: "#f0f9ff", 
@@ -222,33 +220,20 @@
         function setMode(mode) {
             currentMode = mode;
             const c = config[mode];
-            
-            // Actualizar UI
             document.body.style.backgroundColor = c.bg;
             ui.header.style.backgroundColor = c.color;
             ui.largeIcon.textContent = c.icon;
             ui.analyzeBtn.style.backgroundColor = c.color;
             document.getElementById('header-subtitle').textContent = `Modo: ${c.name}`;
-            
-            // Marcar botón activo
-            document.querySelectorAll('.mode-btn').forEach(btn => {
-                btn.classList.remove('mode-active');
-                btn.style.borderColor = 'transparent';
-            });
-            const activeBtn = document.getElementById(`btn-${mode}`);
-            activeBtn.classList.add('mode-active');
-            activeBtn.style.borderColor = c.color;
-
-            // Safety alert
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('mode-active'));
+            document.getElementById(`btn-${mode}`).classList.add('mode-active');
             if (c.safety) {
                 ui.safetyText.textContent = c.safety;
                 ui.safety.classList.remove('hidden');
                 ui.safety.classList.add('flex');
             } else {
                 ui.safety.classList.add('hidden');
-                ui.safety.classList.remove('flex');
             }
-
             resetUI();
         }
 
@@ -259,13 +244,12 @@
                 await ui.video.play();
                 ui.video.classList.remove('hidden');
                 ui.initial.classList.add('hidden');
-                ui.preview.classList.add('hidden');
                 ui.cameraBtn.classList.add('hidden');
                 ui.galleryBtn.classList.add('hidden');
                 ui.captureBtn.classList.remove('hidden');
                 ui.resetBtn.classList.remove('hidden');
             } catch (err) {
-                showError("No se pudo abrir la cámara.");
+                showError("No se pudo abrir la cámara. Verifica los permisos en Chrome.");
             }
         }
 
@@ -327,10 +311,11 @@
             if (!base64Image) return;
             ui.loading.classList.remove('hidden');
             ui.results.classList.add('hidden');
+            ui.error.classList.add('hidden');
             ui.analyzeBtn.disabled = true;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -343,9 +328,10 @@
                 });
 
                 const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (text) renderResults(JSON.parse(text));
-                else throw new Error("No hubo respuesta.");
+                else throw new Error("La IA no devolvió resultados.");
             } catch (err) {
                 showError("Error: " + err.message);
             } finally {
@@ -358,54 +344,9 @@
             document.getElementById('res-name').textContent = res.nombre;
             document.getElementById('res-scientific').textContent = res.cientifico;
             document.getElementById('res-description').textContent = res.descripcion;
-            document.getElementById('res-fact').textContent = res.datoCurioso || res.curiosidad;
-
+            document.getElementById('res-fact').textContent = res.datoCurioso || "Interesante ejemplar.";
             const grid = document.getElementById('res-grid');
             grid.innerHTML = '';
-            
-            const fields = [];
-            if (currentMode === 'botany') fields.push({l: 'Hábitat', v: res.habitat}, {l: 'Cuidados', v: res.cuidados});
-            if (currentMode === 'medicinal') fields.push({l: 'Propiedades', v: res.propiedadesTerapeuticas}, {l: 'Principios', v: res.principiosActivos});
-            if (currentMode === 'edible') fields.push({l: 'Partes', v: res.partesComestibles}, {l: 'Preparación', v: res.preparacion});
-            if (currentMode === 'insect') fields.push({l: 'Riesgo', v: res.peligrosidad}, {l: 'Dieta', v: res.dieta});
-            if (currentMode === 'mushroom') fields.push({l: 'Comestibilidad', v: res.comestibilidad}, {l: 'Temporada', v: res.temporada});
-            if (currentMode === 'fish') fields.push({l: 'Agua', v: res.tipoAgua}, {l: 'Estado', v: res.conservacion});
-
-            fields.forEach(f => {
-                grid.innerHTML += `<div class="bg-white/50 p-4 rounded-2xl border border-white/80">
-                    <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">${f.l}</span>
-                    <p class="text-sm font-bold text-slate-800">${f.v}</p>
-                </div>`;
-            });
-
-            const card = document.getElementById('result-card');
-            const warnBox = document.getElementById('warning-box');
-            card.style.borderLeftColor = config[currentMode].color;
-            
-            const special = document.getElementById('special-info-box');
-            if (res.formaUso || res.contraindicaciones || res.preparacion || res.confusionPeligrosa) {
-                special.classList.remove('hidden');
-                special.style.borderColor = config[currentMode].color + '33';
-                special.style.backgroundColor = config[currentMode].color + '0a';
-                
-                if (currentMode === 'medicinal') {
-                    document.getElementById('special-title').textContent = "🍵 Uso y Precauciones";
-                    document.getElementById('special-content').innerHTML = `<b>Forma de uso:</b> ${res.formaUso}<br><br><b>Contraindicaciones:</b> ${res.contraindicaciones}`;
-                } else {
-                    document.getElementById('special-title').textContent = currentMode === 'edible' ? "👨‍🍳 Preparación" : "📍 Notas";
-                    document.getElementById('special-content').textContent = res.preparacion || res.confusionPeligrosa || res.habitat;
-                }
-            } else {
-                special.classList.add('hidden');
-            }
-
-            if (res.advertencia || res.contraindicaciones || res.confusionPeligrosa) {
-                document.getElementById('res-warning').textContent = res.advertencia || res.contraindicaciones || res.confusionPeligrosa;
-                warnBox.classList.remove('hidden');
-            } else {
-                warnBox.classList.add('hidden');
-            }
-
             ui.results.classList.remove('hidden');
             ui.results.scrollIntoView({ behavior: 'smooth' });
         }
@@ -413,30 +354,27 @@
         function showError(m) {
             ui.error.textContent = m;
             ui.error.classList.remove('hidden');
-            ui.loading.classList.add('hidden');
         }
 
-        ui.analyzeBtn.onclick = analyze;
         setMode('botany');
     </script>
+
     <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBrM3Akf9rh-HVNOgA9BhhRczAz2-yRG3w",
-    authDomain: "omniscanner-ia.firebaseapp.com",
-    projectId: "omniscanner-ia",
-    storageBucket: "omniscanner-ia.firebasestorage.app",
-    messagingSenderId: "989131635135",
-    appId: "1:989131635135:web:86b52e4937ba53ce5f490a",
-    measurementId: "G-1P44PWC8QJ"
-  };
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrM3Akf9rh-HVNOgA9BhhRczAz2-yRG3w",
+            authDomain: "omniscanner-ia.firebaseapp.com",
+            projectId: "omniscanner-ia",
+            storageBucket: "omniscanner-ia.firebasestorage.app",
+            messagingSenderId: "989131635135",
+            appId: "1:989131635135:web:86b52e4937ba53ce5f490a"
+        };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  
-  console.log("¡Firebase conectado!");
-</script>
-</body> 
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        console.log("Firebase activo");
+    </script>
+</body>
 </html>

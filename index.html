@@ -419,5 +419,24 @@
         ui.analyzeBtn.onclick = analyze;
         setMode('botany');
     </script>
-</body>
+</body>. <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBrM3Akf9rh-HVNOgA9BhhRczAz2-yRG3w",
+    authDomain: "omniscanner-ia.firebaseapp.com",
+    projectId: "omniscanner-ia",
+    storageBucket: "omniscanner-ia.firebasestorage.app",
+    messagingSenderId: "989131635135",
+    appId: "1:989131635135:web:86b52e4937ba53ce5f490a",
+    measurementId: "G-1P44PWC8QJ"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  
+  console.log("¡Firebase conectado!");
+</script>
+
 </html>
